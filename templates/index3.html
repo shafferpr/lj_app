@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+
+<style>
+  .links line {
+    stroke: #999;
+    stroke-opacity: 0.6;
+  }
+
+  .nodes circle {
+    stroke: #fff;
+    stroke-width: 1.5px;
+  }
+
+  .dpoints {
+    fill: #f29e2e;
+  }
+
+  .npoints {
+    fill: #2c7bb6;
+  }
+
+  .nodes text {
+    pointer-events: none;
+    fill: #666;
+    font: 10px sans-serif;
+  }
+
+
+
+  #slider-1 {
+    margin-left: 20px;
+    margin-right: 20px;
+    float: left;
+  }
+
+</style>
+
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>D3 Test</title>
+  <script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
+  <script src="https://code.jquery.com/jquery-1.9.1.js"></script>
+  <script src="https://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
+  <link rel="stylesheet" href="https://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" />
+</head>
+
+<body>
+
+  <p>
+    <label for="amount1">time step</label>
+    <input type="text" id="amount1" />
+  </p>
+
+
+
+
+  <div id="slider-1" style="height: 200px;"></div>
+
+  <svg width="1000" height="1000"></svg>
+  <script type="text/javascript">
+
+    $(function() {
+      createSlider($("#slider-1"), $("#amount1"), 0, 10, 0.1, 0.1);
+
+    });
+
+    var svg = d3.select("svg"),
+      width = +svg.attr("width"),
+      height = +svg.attr("height");
+    var color = d3.scaleOrdinal(d3.schemeCategory20);
+    var counter=0;
+    var n_features=25;
+    var ljsigma=5;
+
+
+    var node_positions = new Array(n_features);
+    var node_sigmas = new Array(n_features);
+
+
+
+
+
+
+
+    boxx = 400;
+    boxy = 400;
+
+    //random_positions.map(x => random_circles(x));
+
+
+
+
+
+    for(i=0; i<5; i++){
+      for(j=0; j<5; j++){
+          node_positions[5*i+j] = [5*i,5*j];
+          node_sigmas[5*i+j]=10;
+      }
+    }
+
+
+
+    var posx_vs = new Array(n_features).fill(0.0);
+    var posy_vs = new Array(n_features).fill(0.0);
+
+    var circles = new Array(n_features);
+
+    npoints = [];
+    for (i = 0; i < node_positions.length; i++) {
+      npoints.push({
+        x: node_positions[i][0],
+        y: node_positions[i][1],
+        sigma: node_sigmas[i],
+        vx: 0,
+        vy: 0,
+        vsig: 0,
+        alive: true
+      });
+    }
+
+
+    var nodeWrapper = svg.append("g")
+      .attr("class", "npoints");
+
+
+
+    function runSim() {
+      num_steps=10;
+
+      for (i = 0; i < num_steps; i++) {
+        move_nodes();
+
+      }
+
+
+
+
+      var nodeGroup = nodeWrapper.selectAll("circle")
+        .data(npoints);
+
+      nodeGroup
+        .style("mix-blend-mode", "multiply")
+        //.each(move_nodes)
+        .transition("move").duration(20)
+        .attr("fill-opacity", 1)
+        .attr("r", function(d) {
+          return d.sigma
+        })
+        .attr("cx", function(d) {
+          return d.x
+        })
+        .attr("cy", function(d) {
+          return d.y
+        });
+      //.enter().append("circle");
+
+      nodeGroup
+        .enter().append("circle");
+      //.attr("r", function(d){return d.sigma})
+      //.attr("cx", function(d){return d.x})
+      //.attr("cy", function(d){return d.y});
+
+      nodeGroup.exit().remove();
+
+    }
+
+    var loopsim = setInterval(runSim, 20);
+
+
+    function spawn_particle(){
+      //console.log(npoints[npoints.length-1],'A');
+      particle = {
+        x: npoints[npoints.length-1].x + (Math.random() - 0.5)*150,
+        y: npoints[npoints.length-1].y + (Math.random() - 0.5)*150,
+        sigma: npoints[npoints.length-1].sigma*0.6,
+        vx: 0,
+        vy: 0,
+        vsig: 0,
+        alive: true
+      };
+
+      npoints.push(particle);
+    }
+
+    function move_nodes() {
+      var firstDsig = new Array(npoints.length).fill(0);
+      var firstDposx = new Array(npoints.length).fill(0);
+      var firstDposy = new Array(npoints.length).fill(0);
+      var sum = new Array(npoints.length).fill(0);
+      var step_size = $('#slider-1').slider("value");
+
+      for (k = 0; k < npoints.length ; k++) {
+        var force_x=0;
+        var force_y=0;
+        for (j = 0; j < npoints.length; j++) {
+          if(j != k){
+
+
+
+            force_x += lennardjonesforce(npoints[k].x,npoints[j].x,npoints[k].y,npoints[j].y,ljsigma);
+            force_y += lennardjonesforce(npoints[k].y,npoints[j].y,npoints[k].x,npoints[j].x,ljsigma);
+
+
+
+        }
+        }
+
+        //npoints[k].vx -= pos_damping * npoints[k].vx;
+        //npoints[k].vy -= pos_damping * npoints[k].vy;
+
+
+        npoints[k].vx -= force_x ;
+
+        npoints[k].vy -= force_y ;
+
+
+
+        npoints[k].x += step_size * npoints[k].vx ;
+        if (npoints[k].x > boxx) {
+          npoints[k].x = npoints[k].x - boxx;
+        }
+        if (npoints[k].x < 0) {
+          npoints[k].x = boxx + npoints[k].x;
+        }
+
+        npoints[k].y += step_size * npoints[k].vy ;
+        if (npoints[k].y > boxy) {
+          npoints[k].y = npoints[k].y - boxy;
+        }
+        if (npoints[k].y < 0) {
+          npoints[k].y = boxy + npoints[k].y;
+        }
+
+      }
+
+
+
+    }
+
+
+
+    function lennardjones(x,x0,y,y0,sig){
+      var r2 = Math.pow(x - x0, 2) + Math.pow(y - y0, 2);
+      var invR2=sig*sig/r2;
+      return Math.pow(invR2,6)-Math.pow(invR2,3);
+    }
+
+    function lennardjonesforce(x,x0,y,y0,sig){
+      var r2 = Math.pow(x - x0, 2) + Math.pow(y - y0, 2);
+      var r=Math.pow(r2,0.5);
+      var invR2=sig*sig/r2;
+      return (12*Math.pow(invR2,6)-6*Math.pow(invR2,3))*(x-x0)/r2;
+    }
+
+    function createSlider(slider, boundTextField, min, max, init, step) {
+      slider.slider({
+        orientation: "vertical",
+        range: "min",
+        min: min,
+        max: max,
+        value: init,
+        step: step,
+        slide: function(event, ui) {
+          boundTextField.val(ui.value);
+          //drawOnCanvas();
+        }
+      })
+    }
+
+  </script>
+</body>
+
+</html>
