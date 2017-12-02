@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-
+<meta charset="utf-8">
 <style>
 
 
@@ -27,6 +27,7 @@
     stroke: #000;
     stroke-width: 1.5px;
   }
+
 
   #slider-1 {
     margin-left: 20px;
@@ -59,30 +60,32 @@
 
   <div id="slider-1" style="height: 200px;"></div>
 
-  <svg width="400" height="400"></svg>
+  <svg width="300" height="300"></svg>
   <script type="text/javascript">
 
     $(function() {
       createSlider($("#slider-1"), $("#amount1"), 0, 0.1, 0.00, 0.005);
-
+      console.log("hello");
     });
 
     var n = 40,
         random = d3.randomNormal(0, .2),
-        energyarray = d3.range(n).map(random);
-    var width2=960,
-        height2=500;
+        data = d3.range(n).map(random);
+    var width2=200,
+        height2=100;
     var svg = d3.select("svg"),
+        margin = {top: 20, right: 20, bottom: 20, left: 40},
       width = +svg.attr("width"),
       height = +svg.attr("height");
+
     var color = d3.scaleOrdinal(d3.schemeCategory20);
 
     var linechart = d3.select("body").append("svg"),
         margin = {top: 20, right: 20, bottom: 20, left: 40},
-        width = width2 - margin.left - margin.right,
-        height = height2 - margin.top - margin.bottom,
+        width = +width2 - margin.left - margin.right,
+        height = +height2 - margin.top - margin.bottom;
         g = linechart.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
+        //g = linechart.append("g");
     var counter=0;
     var n_features=49;
     var ljsigma=5;
@@ -138,34 +141,45 @@
       .attr("class", "npoints");
 
       var x = d3.scaleLinear()
-          .domain([0, n-1])
-          .range([0, width2]);
+          .domain([0, n - 1])
+          .range([0, width]);
+
       var y = d3.scaleLinear()
           .domain([-1, 1])
-          .range([height2, 0]);
+          .range([height, 0]);
+
       var line = d3.line()
           .x(function(d, i) { return x(i); })
           .y(function(d, i) { return y(d); });
+
       g.append("defs").append("clipPath")
           .attr("id", "clip")
         .append("rect")
-          .attr("width", width2)
-          .attr("height", height2);
+          .attr("width", width)
+          .attr("height", height);
+
       g.append("g")
           .attr("class", "axis axis--x")
           .attr("transform", "translate(0," + y(0) + ")")
           .call(d3.axisBottom(x));
+
       g.append("g")
           .attr("class", "axis axis--y")
           .call(d3.axisLeft(y));
+
       g.append("g")
           .attr("clip-path", "url(#clip)")
-          .append("path")
-          .datum(energyarray)
-          .attr("class", "line");
+        .append("path")
+          .datum(data)
+          .attr("class", "line")
+        .transition()
+          .duration(50)
+          .ease(d3.easeLinear)
+          .on("start", tick);
 
     var counter=0;
-    function runSim() {
+
+    function tick() {
       num_steps=10;
 
       for (i = 0; i < num_steps; i++) {
@@ -177,10 +191,6 @@
 
 
 
-        g.transition()
-          .duration(20)
-          .ease(d3.easeLinear);
-          //.on("start", tick(energy));
 
 
       var nodeGroup = nodeWrapper.selectAll("circle")
@@ -210,9 +220,26 @@
 
       nodeGroup.exit().remove();
 
+      data.push(Math.sin(counter/10));
+
+      // Redraw the line.
+      d3.select(this)
+          .attr("d", line)
+          .attr("transform", null);
+
+      // Slide it to the left.
+      d3.active(this)
+          .attr("transform", "translate(" + x(-1) + ",0)")
+        .transition()
+          .on("start", tick);
+
+      // Pop the old data point off the front.
+      data.shift();
+
+
     }
 
-    var loopsim = setInterval(runSim, 20);
+    //var loopsim = setInterval(runSim, 20);
 
 
     function spawn_particle(){
@@ -283,22 +310,6 @@
     }
 
 
-
-    function tick(energyval) {
-      // Push a new data point onto the back.
-      energyarray.push(energyval);
-      // Redraw the line.
-      d3.select(this)
-          .attr("d", line)
-          .attr("transform", null);
-      // Slide it to the left.
-      d3.active(this)
-          .attr("transform", "translate(" + x(-1) + ",0)")
-        .transition()
-          .on("start", tick);
-      // Pop the old data point off the front.
-      energyarray.shift();
-    }
 
     function lennardjones(x,x0,y,y0,sig){
       var r2 = Math.pow(x - x0, 2) + Math.pow(y - y0, 2);

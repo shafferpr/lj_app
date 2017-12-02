@@ -14,7 +14,7 @@ def index():
     # do not need to be the same.
     if request.method == 'GET':
         #create_tree()
-        return render_template('index3.html')
+        return render_template('inex4.html')
         #script = create_connection_dictionary("Facebook")
         #return render_template('index2.html')
     else:
