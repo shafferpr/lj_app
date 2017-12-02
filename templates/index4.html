@@ -35,6 +35,8 @@
     float: left;
   }
 
+
+
 </style>
 
 <html lang="en">
@@ -59,35 +61,40 @@
 
 
   <div id="slider-1" style="height: 200px;"></div>
+  <svg width="400" height="400"></svg>
 
-  <svg width="300" height="300"></svg>
   <script type="text/javascript">
 
     $(function() {
-      createSlider($("#slider-1"), $("#amount1"), 0, 0.1, 0.00, 0.005);
+      createSlider($("#slider-1"), $("#amount1"), 0.05, 3, 0.05, 0.04);
       console.log("hello");
     });
 
     var n = 40,
         random = d3.randomNormal(0, .2),
         data = d3.range(n).map(random);
-    var width2=200,
-        height2=100;
+    var width=400,
+        height=400;
+    var width2=300,
+        height2=150;
     var svg = d3.select("svg"),
         margin = {top: 20, right: 20, bottom: 20, left: 40},
-      width = +svg.attr("width"),
-      height = +svg.attr("height");
-
+      width = +svg.attr(width),
+      height = +svg.attr(height);
+      //width = +width,
+      //height = +height;
+      console.log(width,height,width2,height2);
     var color = d3.scaleOrdinal(d3.schemeCategory20);
 
     var linechart = d3.select("body").append("svg"),
         margin = {top: 20, right: 20, bottom: 20, left: 40},
-        width = +width2 - margin.left - margin.right,
-        height = +height2 - margin.top - margin.bottom;
+        width = +width2,
+        height = +height2 ;
+        //g = linechart.append("g").attr("transform", "translate(" + 0 + "," + (height / 2 + 300) + ")");
         g = linechart.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
         //g = linechart.append("g");
     var counter=0;
-    var n_features=49;
+    var n_features=81;
     var ljsigma=5;
 
 
@@ -109,10 +116,10 @@
 
 
 
-    for(i=0; i<7; i++){
-      for(j=0; j<7; j++){
-          node_positions[7*i+j] = [10+30*i,10+30*j];
-          node_sigmas[7*i+j]=10;
+    for(i=0; i<9; i++){
+      for(j=0; j<9; j++){
+          node_positions[9*i+j] = [10+38*i,10+38*j];
+          node_sigmas[9*i+j]=10;
       }
     }
 
@@ -129,8 +136,8 @@
         x: node_positions[i][0],
         y: node_positions[i][1],
         sigma: node_sigmas[i],
-        vx: 0,
-        vy: 0,
+        vx: 2*(Math.random()-0.5)/7,
+        vy: 2*(Math.random()-0.5)/7,
         vsig: 0,
         alive: true
       });
@@ -142,11 +149,11 @@
 
       var x = d3.scaleLinear()
           .domain([0, n - 1])
-          .range([0, width]);
+          .range([0, width2]);
 
       var y = d3.scaleLinear()
-          .domain([-1, 1])
-          .range([height, 0]);
+          .domain([0, 2])
+          .range([height2, 0]);
 
       var line = d3.line()
           .x(function(d, i) { return x(i); })
@@ -155,8 +162,8 @@
       g.append("defs").append("clipPath")
           .attr("id", "clip")
         .append("rect")
-          .attr("width", width)
-          .attr("height", height);
+          .attr("width", width2)
+          .attr("height", height2);
 
       g.append("g")
           .attr("class", "axis axis--x")
@@ -173,7 +180,7 @@
           .datum(data)
           .attr("class", "line")
         .transition()
-          .duration(50)
+          .duration(20)
           .ease(d3.easeLinear)
           .on("start", tick);
 
@@ -220,7 +227,7 @@
 
       nodeGroup.exit().remove();
 
-      data.push(Math.sin(counter/10));
+      data.push(energy);
 
       // Redraw the line.
       d3.select(this)
@@ -248,8 +255,8 @@
         x: npoints[npoints.length-1].x + (Math.random() - 0.5)*150,
         y: npoints[npoints.length-1].y + (Math.random() - 0.5)*150,
         sigma: npoints[npoints.length-1].sigma*0.6,
-        vx: 0,
-        vy: 0,
+        vx: 2*(Math.random()-0.5)/70,
+        vy: 2*(Math.random()-0.5)/70,
         vsig: 0,
         alive: true
       };
@@ -312,16 +319,44 @@
 
 
     function lennardjones(x,x0,y,y0,sig){
-      var r2 = Math.pow(x - x0, 2) + Math.pow(y - y0, 2);
+      var deltax=x-x0;
+      var deltay=y-y0;
+      if(deltax>boxx/2){
+        deltax=deltax-boxx;
+      }
+      if(deltax< (-boxx/2)){
+        deltax=boxx+deltax;
+      }
+      if(deltay>boxy/2){
+        deltay=deltay-boxy;
+      }
+      if(deltay< (-boxy/2)){
+        deltay=boxy+deltay;
+      }
+      var r2 = Math.pow(deltax, 2) + Math.pow(deltay, 2);
       var invR2=sig*sig/r2;
       return Math.pow(invR2,6)-Math.pow(invR2,3);
     }
 
     function lennardjonesforce(x,x0,y,y0,sig){
-      var r2 = Math.pow(x - x0, 2) + Math.pow(y - y0, 2);
+      var deltax=x-x0;
+      var deltay=y-y0;
+      if(deltax>boxx/2){
+        deltax=deltax-boxx;
+      }
+      if(deltax< (-boxx/2)){
+        deltax=boxx+deltax;
+      }
+      if(deltay>boxy/2){
+        deltay=deltay-boxy;
+      }
+      if(deltay< (-boxy/2)){
+        deltay=boxy+deltay;
+      }
+      var r2 = Math.pow(deltax, 2) + Math.pow(deltay, 2);
       var r=Math.pow(r2,0.5);
       var invR2=sig*sig/r2;
-      return (12*Math.pow(invR2,6)-6*Math.pow(invR2,3))*(x-x0)/r2;
+      return (12*Math.pow(invR2,6)-6*Math.pow(invR2,3))*(deltax)/r2;
     }
 
     function createSlider(slider, boundTextField, min, max, init, step) {

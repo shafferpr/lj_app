@@ -14,11 +14,11 @@ def index():
     # do not need to be the same.
     if request.method == 'GET':
         #create_tree()
-        return render_template('inex4.html')
+        return render_template('index4.html')
         #script = create_connection_dictionary("Facebook")
         #return render_template('index2.html')
     else:
-        return render_template('index3.html', json_string=json_string)
+        return render_template('index4.html', json_string=json_string)
 
 if __name__ == '__main__':
     app.run()
